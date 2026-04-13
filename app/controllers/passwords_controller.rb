@@ -9,7 +9,9 @@ class PasswordsController < ApplicationController
     if user = User.find_by(email_address: params[:email_address])
       PasswordsMailer.reset(user).deliver_now
     end
-
+    redirect_to new_session_path, notice: "Password reset instructions sent (if user with that email address exists)."
+  rescue => e
+    Rails.logger.error "Password reset mailer failed: #{e.message}"
     redirect_to new_session_path, notice: "Password reset instructions sent (if user with that email address exists)."
   end
 
