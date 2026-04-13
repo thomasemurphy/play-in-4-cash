@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_13_035039) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_13_044339) do
   create_table "games", force: :cascade do |t|
     t.integer "away_team_id", null: false
     t.string "conference"
@@ -38,6 +38,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_035039) do
     t.string "conference"
     t.datetime "created_at", null: false
     t.string "name"
+    t.string "primary_color"
+    t.string "secondary_color"
     t.integer "seed"
     t.integer "tournament_id", null: false
     t.datetime "updated_at", null: false
@@ -47,7 +49,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_035039) do
   create_table "tournaments", force: :cascade do |t|
     t.boolean "active"
     t.datetime "created_at", null: false
+    t.datetime "east_lock_time"
     t.datetime "updated_at", null: false
+    t.datetime "west_lock_time"
     t.integer "year"
     t.index ["year"], name: "index_tournaments_on_year", unique: true
   end

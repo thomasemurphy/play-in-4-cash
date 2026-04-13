@@ -11,39 +11,41 @@
      <%= data_attrs.map { |k, v| "#{k}=\"#{v}\"" }.join(" ").html_safe %>>
 
   <!-- Home Team -->
+  <% home_selected = picked_winner_id == game.home_team_id %>
   <button type="button"
-          class="team-pick-btn w-full flex items-center gap-3 px-4 py-3 transition-all duration-150 text-left
-                 <%= picked_winner_id == game.home_team_id ? 'bg-orange-500 text-white font-bold' : 'bg-gray-800 hover:bg-gray-700 text-gray-200' %>"
+          class="team-pick-btn w-full flex items-center gap-3 px-4 py-3 transition-all duration-150 text-left font-bold
+                 <%= home_selected ? '' : 'bg-gray-800 hover:bg-gray-700 text-gray-200' %>"
+          style="<%= home_selected ? "background-color: #{game.home_team.primary_color}; color: #{game.home_team.secondary_color};" : '' %>"
           data-action="click->bracket#pickWinner"
           data-bracket-game-id-param="<%= game.id %>"
           data-bracket-winner-id-param="<%= game.home_team_id %>"
           data-bracket-conference-param="<%= game.conference %>"
           data-bracket-game-type-param="<%= game.game_type %>"
-          data-bracket-home-away-param="home">
-    <span class="text-xs font-bold text-gray-400 w-4">#<%= game.home_team.seed %></span>
+          data-bracket-home-away-param="home"
+          data-team-color="<%= game.home_team.primary_color %>"
+          data-team-secondary-color="<%= game.home_team.secondary_color %>">
+    <span class="text-xs font-bold w-4">#<%= game.home_team.seed %></span>
     <span class="font-semibold text-sm"><%= game.home_team.name %></span>
-    <% if picked_winner_id == game.home_team_id %>
-      <span class="ml-auto text-xs font-black">✓ PICK</span>
-    <% end %>
   </button>
 
   <div class="h-px bg-gray-700 mx-4"></div>
 
   <!-- Away Team -->
+  <% away_selected = picked_winner_id == game.away_team_id %>
   <button type="button"
-          class="team-pick-btn w-full flex items-center gap-3 px-4 py-3 transition-all duration-150 text-left
-                 <%= picked_winner_id == game.away_team_id ? 'bg-orange-500 text-white font-bold' : 'bg-gray-800 hover:bg-gray-700 text-gray-200' %>"
+          class="team-pick-btn w-full flex items-center gap-3 px-4 py-3 transition-all duration-150 text-left font-bold
+                 <%= away_selected ? '' : 'bg-gray-800 hover:bg-gray-700 text-gray-200' %>"
+          style="<%= away_selected ? "background-color: #{game.away_team.primary_color}; color: #{game.away_team.secondary_color};" : '' %>"
           data-action="click->bracket#pickWinner"
           data-bracket-game-id-param="<%= game.id %>"
           data-bracket-winner-id-param="<%= game.away_team_id %>"
           data-bracket-conference-param="<%= game.conference %>"
           data-bracket-game-type-param="<%= game.game_type %>"
-          data-bracket-home-away-param="away">
-    <span class="text-xs font-bold text-gray-400 w-4">#<%= game.away_team.seed %></span>
+          data-bracket-home-away-param="away"
+          data-team-color="<%= game.away_team.primary_color %>"
+          data-team-secondary-color="<%= game.away_team.secondary_color %>">
+    <span class="text-xs font-bold w-4">#<%= game.away_team.seed %></span>
     <span class="font-semibold text-sm"><%= game.away_team.name %></span>
-    <% if picked_winner_id == game.away_team_id %>
-      <span class="ml-auto text-xs font-black">✓ PICK</span>
-    <% end %>
   </button>
 
 </div>

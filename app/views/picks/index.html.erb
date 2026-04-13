@@ -1,16 +1,17 @@
 <% content_for :title, "#{@tournament.year} NBA Play-In Bracket" %>
 
-<div class="max-w-6xl mx-auto"
+<div class="max-w-4xl mx-auto"
      data-controller="bracket"
      data-bracket-picks-url-value="<%= picks_path %>"
-     data-bracket-picks-value="<%= @picks.transform_values { |p| p.picked_winner_id }.to_json %>">
+     data-bracket-picks-value="<%= @picks.transform_values { |p| p.picked_winner_id }.to_json %>"
+     data-bracket-east-lock-time-value="<%= @tournament.east_lock_time.utc.iso8601 %>"
+     data-bracket-west-lock-time-value="<%= @tournament.west_lock_time.utc.iso8601 %>">
 
   <div class="text-center mb-10">
     <h1 class="text-3xl font-black tracking-tight text-white"><%= @tournament.year %> NBA Play-In Tournament</h1>
-    <p class="text-gray-400 mt-1 text-sm">Pick the winner of each game. Your bracket auto-updates as you go.</p>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+  <div class="flex flex-col gap-8">
     <% %w[East West].each do |conference| %>
       <%
         seven_eight_game = @games.find { |g| g.conference == conference && g.game_type == Game::SEVEN_EIGHT }
@@ -21,64 +22,62 @@
       <div class="bg-gray-900 rounded-2xl p-6 border border-gray-800"
            data-conference="<%= conference %>">
 
-        <h2 class="text-lg font-bold text-orange-400 mb-6 uppercase tracking-widest text-center">
+        <h2 class="text-lg font-bold text-orange-400 mb-1 uppercase tracking-widest text-center">
           <%= conference %>ern Conference
         </h2>
+        <p class="text-xs text-center mb-6 text-gray-500"
+           data-bracket-lock-label-conference="<%= conference %>"></p>
 
-        <!-- Round 1: two games side by side -->
-        <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="grid grid-cols-2 gap-6 items-center">
 
-          <!-- Game 1: #7 vs #8 -->
-          <div class="space-y-2">
-            <div class="text-xs text-gray-500 font-semibold uppercase tracking-wider text-center mb-2">
-              #7 vs #8 &bull; <span class="text-green-400">Winner → #7 Seed</span>
+          <!-- Left column: 7v8 stacked on top of 9v10 -->
+          <div class="flex flex-col gap-4">
+
+            <!-- Game 1: #7 vs #8 -->
+            <div>
+              <div class="text-xs text-gray-500 font-semibold uppercase tracking-wider text-center mb-2">
+                #7 vs #8 &bull; <span class="text-green-400">Winner → #7 Seed</span>
+              </div>
+              <%= render "game_card",
+                    game: seven_eight_game,
+                    picks: @picks,
+                    data_attrs: {
+                      "data-bracket-game-type": Game::SEVEN_EIGHT,
+                      "data-bracket-conference": conference
+                    } %>
             </div>
-            <%= render "game_card",
-                  game: seven_eight_game,
-                  picks: @picks,
-                  data_attrs: {
-                    "data-bracket-game-type": Game::SEVEN_EIGHT,
-                    "data-bracket-conference": conference
-                  } %>
-          </div>
 
-          <!-- Game 2: #9 vs #10 -->
-          <div class="space-y-2">
-            <div class="text-xs text-gray-500 font-semibold uppercase tracking-wider text-center mb-2">
-              #9 vs #10 &bull; <span class="text-yellow-400">Winner Advances</span>
+            <!-- Game 2: #9 vs #10 -->
+            <div>
+              <div class="text-xs text-gray-500 font-semibold uppercase tracking-wider text-center mb-2">
+                #9 vs #10 &bull; <span class="text-yellow-400">Winner Advances</span>
+              </div>
+              <%= render "game_card",
+                    game: nine_ten_game,
+                    picks: @picks,
+                    data_attrs: {
+                      "data-bracket-game-type": Game::NINE_TEN,
+                      "data-bracket-conference": conference
+                    } %>
             </div>
-            <%= render "game_card",
-                  game: nine_ten_game,
-                  picks: @picks,
-                  data_attrs: {
-                    "data-bracket-game-type": Game::NINE_TEN,
-                    "data-bracket-conference": conference
-                  } %>
           </div>
-        </div>
 
-        <!-- Arrow indicator -->
-        <div class="flex items-center justify-center gap-2 mb-4">
-          <div class="h-px flex-1 bg-gray-700"></div>
-          <span class="text-xs text-gray-500 uppercase tracking-widest">Play-In Final</span>
-          <div class="h-px flex-1 bg-gray-700"></div>
-        </div>
-
-        <!-- Game 3: Play-In Final -->
-        <div class="space-y-2">
-          <div class="text-xs text-gray-500 font-semibold uppercase tracking-wider text-center mb-2">
-            Loser of #7/#8 vs Winner of #9/#10 &bull; <span class="text-blue-400">Winner → #8 Seed</span>
+          <!-- Right column: Play-In Final -->
+          <div>
+            <div class="text-xs text-gray-500 font-semibold uppercase tracking-wider text-center mb-2">
+              Play-In Final &bull; <span class="text-blue-400">Winner → #8 Seed</span>
+            </div>
+            <div data-bracket-final-target-conference="<%= conference %>">
+              <%= render "final_game_card",
+                    game: final_game,
+                    picks: @picks,
+                    seven_eight_game: seven_eight_game,
+                    nine_ten_game: nine_ten_game,
+                    conference: conference %>
+            </div>
           </div>
-          <div data-bracket-final-target-conference="<%= conference %>">
-            <%= render "final_game_card",
-                  game: final_game,
-                  picks: @picks,
-                  seven_eight_game: seven_eight_game,
-                  nine_ten_game: nine_ten_game,
-                  conference: conference %>
-          </div>
-        </div>
 
+        </div>
       </div>
     <% end %>
   </div>

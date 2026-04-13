@@ -7,11 +7,59 @@ export default class extends Controller {
   static values = {
     picksUrl: String,
     picks: Object,   // { game_id: picked_winner_id, ... }
+    eastLockTime: String,  // ISO8601 UTC
+    westLockTime: String,
   }
 
   connect() {
-    // picks is keyed by string (JSON keys are always strings)
     this.picksMap = this.picksValue || {}
+    this.renderLockLabels()
+    this.applyLockState()
+  }
+
+  lockTimeFor(conference) {
+    const iso = conference === "East" ? this.eastLockTimeValue : this.westLockTimeValue
+    return iso ? new Date(iso) : null
+  }
+
+  isLocked(conference) {
+    const t = this.lockTimeFor(conference)
+    return t && Date.now() >= t.getTime()
+  }
+
+  renderLockLabels() {
+    this.element.querySelectorAll("[data-bracket-lock-label-conference]").forEach(el => {
+      const conference = el.dataset.bracketLockLabelConference
+      const lockTime   = this.lockTimeFor(conference)
+      if (!lockTime) return
+
+      if (this.isLocked(conference)) {
+        el.textContent = "Picks locked"
+        el.classList.remove("text-gray-500")
+        el.classList.add("text-red-400")
+      } else {
+        const formatted = lockTime.toLocaleString(undefined, {
+          weekday: "long",
+          hour:    "numeric",
+          minute:  "2-digit",
+          timeZoneName: "short",
+        })
+        el.textContent = `Picks lock ${formatted}`
+      }
+    })
+  }
+
+  applyLockState() {
+    for (const conference of ["East", "West"]) {
+      if (!this.isLocked(conference)) continue
+      const conferenceEl = this.element.querySelector(`[data-conference="${conference}"]`)
+      if (!conferenceEl) continue
+      conferenceEl.querySelectorAll(".team-pick-btn").forEach(btn => {
+        btn.disabled = true
+        btn.classList.add("cursor-not-allowed", "opacity-60")
+        btn.classList.remove("hover:bg-gray-700")
+      })
+    }
   }
 
   async pickWinner(event) {
@@ -21,19 +69,36 @@ export default class extends Controller {
     const conference  = btn.dataset.bracketConferenceParam
     const gameType    = btn.dataset.bracketGameTypeParam
 
-    // Optimistically update UI
-    this.updateGameCardUI(gameId, winnerId)
+    if (this.isLocked(conference)) return
 
-    // Track pick locally
-    this.picksMap[String(gameId)] = winnerId
+    const isDeselect = this.picksMap[String(gameId)] === winnerId
+
+    if (isDeselect) {
+      delete this.picksMap[String(gameId)]
+      this.clearGameCardUI(gameId)
+    } else {
+      this.picksMap[String(gameId)] = winnerId
+      this.updateGameCardUI(gameId, winnerId)
+    }
 
     // If this is a round-1 game, refresh the final card
     if (gameType === "seven_eight" || gameType === "nine_ten") {
       this.refreshFinalCard(conference)
     }
 
-    // Persist to server
-    await this.savePick(gameId, winnerId)
+    // Persist to server (null clears the pick)
+    await this.savePick(gameId, isDeselect ? null : winnerId)
+  }
+
+  clearGameCardUI(gameId) {
+    const card = this.element.querySelector(`[data-bracket-game-id="${gameId}"]`)
+    if (!card) return
+
+    card.querySelectorAll(".team-pick-btn").forEach(btn => {
+      btn.style.backgroundColor = ""
+      btn.style.color = ""
+      btn.classList.add("bg-gray-800", "hover:bg-gray-700", "text-gray-200")
+    })
   }
 
   updateGameCardUI(gameId, winnerId) {
@@ -44,21 +109,15 @@ export default class extends Controller {
       const thisWinnerId = parseInt(btn.dataset.bracketWinnerIdParam)
       const isSelected   = thisWinnerId === winnerId
 
-      // Reset classes
-      btn.classList.remove("bg-orange-500", "text-white", "font-bold", "bg-gray-800", "hover:bg-gray-700", "text-gray-200")
+      btn.classList.remove("bg-gray-800", "hover:bg-gray-700", "text-gray-200")
 
       if (isSelected) {
-        btn.classList.add("bg-orange-500", "text-white", "font-bold")
-        // Ensure checkmark badge exists
-        if (!btn.querySelector(".pick-check")) {
-          const badge = document.createElement("span")
-          badge.className = "ml-auto text-xs font-black pick-check"
-          badge.textContent = "✓ PICK"
-          btn.appendChild(badge)
-        }
+        btn.style.backgroundColor = btn.dataset.teamColor
+        btn.style.color = btn.dataset.teamSecondaryColor
       } else {
+        btn.style.backgroundColor = ""
+        btn.style.color = ""
         btn.classList.add("bg-gray-800", "hover:bg-gray-700", "text-gray-200")
-        btn.querySelector(".pick-check")?.remove()
       }
     })
   }
@@ -80,73 +139,95 @@ export default class extends Controller {
     const finalGameId = parseInt(finalContainer.dataset.bracketGameId)
 
     // Home slot = loser of 7v8 (opposite of 7v8 pick)
-    let homeTeamId = null, homeTeamSeed = null, homeTeamName = null
+    let homeTeamId = null, homeTeamSeed = null, homeTeamName = null, homeTeamColor = null, homeTeamSecondaryColor = null
     if (sevenEightPick && sevenEightCard) {
       const btns = sevenEightCard.querySelectorAll(".team-pick-btn")
       btns.forEach(btn => {
         const id = parseInt(btn.dataset.bracketWinnerIdParam)
         if (id !== sevenEightPick) {
-          homeTeamId   = id
-          homeTeamSeed = btn.querySelector("span:first-child")?.textContent?.replace("#", "")
-          homeTeamName = btn.querySelector("span:nth-child(2)")?.textContent
+          homeTeamId             = id
+          homeTeamSeed           = btn.querySelector("span:first-child")?.textContent?.replace("#", "")
+          homeTeamName           = btn.querySelector("span:nth-child(2)")?.textContent
+          homeTeamColor          = btn.dataset.teamColor
+          homeTeamSecondaryColor = btn.dataset.teamSecondaryColor
         }
       })
     }
 
     // Away slot = winner of 9v10
-    let awayTeamId = null, awayTeamSeed = null, awayTeamName = null
+    let awayTeamId = null, awayTeamSeed = null, awayTeamName = null, awayTeamColor = null, awayTeamSecondaryColor = null
     if (nineTenPick && nineTenCard) {
       const btns = nineTenCard.querySelectorAll(".team-pick-btn")
       btns.forEach(btn => {
         const id = parseInt(btn.dataset.bracketWinnerIdParam)
         if (id === nineTenPick) {
-          awayTeamId   = id
-          awayTeamSeed = btn.querySelector("span:first-child")?.textContent?.replace("#", "")
-          awayTeamName = btn.querySelector("span:nth-child(2)")?.textContent
+          awayTeamId             = id
+          awayTeamSeed           = btn.querySelector("span:first-child")?.textContent?.replace("#", "")
+          awayTeamName           = btn.querySelector("span:nth-child(2)")?.textContent
+          awayTeamColor          = btn.dataset.teamColor
+          awayTeamSecondaryColor = btn.dataset.teamSecondaryColor
         }
       })
     }
 
-    const currentFinalPick = this.picksMap[String(finalGameId)]
+    // If the current final pick is for a team no longer in the final, clear it
+    let currentFinalPick = this.picksMap[String(finalGameId)]
+    if (currentFinalPick !== undefined) {
+      const stillValid = currentFinalPick === homeTeamId || currentFinalPick === awayTeamId
+      if (!stillValid) {
+        delete this.picksMap[String(finalGameId)]
+        currentFinalPick = undefined
+        this.savePick(finalGameId, null)
+      }
+    }
 
     // Re-render the final card slots
     finalContainer.innerHTML = this.buildFinalCardHTML({
       finalGameId,
       conference,
-      homeTeamId, homeTeamSeed, homeTeamName,
-      awayTeamId, awayTeamSeed, awayTeamName,
+      homeTeamId, homeTeamSeed, homeTeamName, homeTeamColor, homeTeamSecondaryColor,
+      awayTeamId, awayTeamSeed, awayTeamName, awayTeamColor, awayTeamSecondaryColor,
       currentFinalPick,
       sevenEightGameId,
       nineTenGameId
     })
 
+    if (this.isLocked(conference)) {
+      finalContainer.querySelectorAll(".team-pick-btn").forEach(btn => {
+        btn.disabled = true
+        btn.classList.add("cursor-not-allowed", "opacity-60")
+      })
+    }
+
     // Re-attach event listeners by re-adding data-action (Stimulus handles via delegation already)
   }
 
-  buildFinalCardHTML({ finalGameId, conference, homeTeamId, homeTeamSeed, homeTeamName,
-                       awayTeamId, awayTeamSeed, awayTeamName, currentFinalPick,
+  buildFinalCardHTML({ finalGameId, conference, homeTeamId, homeTeamSeed, homeTeamName, homeTeamColor, homeTeamSecondaryColor,
+                       awayTeamId, awayTeamSeed, awayTeamName, awayTeamColor, awayTeamSecondaryColor, currentFinalPick,
                        sevenEightGameId, nineTenGameId }) {
 
-    const makeTeamBtn = (teamId, teamSeed, teamName, labelText, slotType) => {
-      const isSelected = currentFinalPick === teamId
-      const colorClass = isSelected
-        ? "bg-orange-500 text-white font-bold"
-        : "bg-gray-800 hover:bg-gray-700 text-gray-200"
-      const checkmark  = isSelected ? `<span class="ml-auto text-xs font-black pick-check">✓ PICK</span>` : ""
+    const makeTeamBtn = (teamId, teamSeed, teamName, teamColor, teamSecondaryColor, labelText, slotType) => {
+      const isSelected  = currentFinalPick === teamId
+      const colorClass  = isSelected ? "font-bold" : "bg-gray-800 hover:bg-gray-700 text-gray-200"
+      const inlineStyle = isSelected
+        ? `style="background-color: ${teamColor}; color: ${teamSecondaryColor};"`
+        : ""
 
       return `
         <button type="button"
                 class="team-pick-btn w-full flex items-center gap-3 px-4 py-3 transition-all duration-150 text-left ${colorClass}"
+                ${inlineStyle}
                 data-action="click->bracket#pickWinner"
                 data-bracket-game-id-param="${finalGameId}"
                 data-bracket-winner-id-param="${teamId}"
                 data-bracket-conference-param="${conference}"
                 data-bracket-game-type-param="final"
-                data-bracket-home-away-param="${slotType}">
-          <span class="text-xs font-bold text-gray-400 w-4">#${teamSeed}</span>
+                data-bracket-home-away-param="${slotType}"
+                data-team-color="${teamColor}"
+                data-team-secondary-color="${teamSecondaryColor}">
+          <span class="text-xs font-bold w-4">#${teamSeed}</span>
           <span class="font-semibold text-sm">${teamName}</span>
-          <span class="text-xs text-gray-500 ml-1">${labelText}</span>
-          ${checkmark}
+          <span class="text-xs ml-1 opacity-70">${labelText}</span>
         </button>`
     }
 
@@ -157,11 +238,11 @@ export default class extends Controller {
       </div>`
 
     const homeSlot = homeTeamId
-      ? makeTeamBtn(homeTeamId, homeTeamSeed, homeTeamName, "(loser of #7v8)", "home")
+      ? makeTeamBtn(homeTeamId, homeTeamSeed, homeTeamName, homeTeamColor, homeTeamSecondaryColor, "(loser of #7v8)", "home")
       : makePlaceholder("Loser of #7 vs #8")
 
     const awaySlot = awayTeamId
-      ? makeTeamBtn(awayTeamId, awayTeamSeed, awayTeamName, "(winner of #9v10)", "away")
+      ? makeTeamBtn(awayTeamId, awayTeamSeed, awayTeamName, awayTeamColor, awayTeamSecondaryColor, "(winner of #9v10)", "away")
       : makePlaceholder("Winner of #9 vs #10")
 
     const divider = `<div class="h-px bg-gray-700 mx-4"></div>`
