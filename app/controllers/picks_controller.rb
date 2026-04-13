@@ -1,0 +1,39 @@
+class PicksController < ApplicationController
+  before_action :require_authentication
+
+  def index
+    @tournament = Tournament.current
+    if @tournament.nil?
+      render plain: "No active tournament found." and return
+    end
+
+    @games = @tournament.games.includes(:home_team, :away_team).to_a
+
+    @picks = Current.user.user_picks
+      .where(game_id: @games.map(&:id))
+      .index_by(&:game_id)
+  end
+
+  def create
+    game = Game.find(params[:game_id])
+    pick = Current.user.user_picks.find_or_initialize_by(game: game)
+    pick.picked_winner_id = params[:picked_winner_id].presence
+
+    if pick.save
+      render json: { success: true, pick: { game_id: game.id, picked_winner_id: pick.picked_winner_id } }
+    else
+      render json: { success: false, errors: pick.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  def update
+    pick = Current.user.user_picks.find(params[:id])
+    pick.picked_winner_id = params[:picked_winner_id].presence
+
+    if pick.save
+      render json: { success: true, pick: { game_id: pick.game_id, picked_winner_id: pick.picked_winner_id } }
+    else
+      render json: { success: false, errors: pick.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+end

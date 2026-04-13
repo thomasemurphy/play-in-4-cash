@@ -1,0 +1,83 @@
+<%# Final game card. The teams depend on picks from the earlier rounds.
+    Locals: game (Game), picks (Hash), seven_eight_game (Game), nine_ten_game (Game), conference (String) %>
+
+<% pick = picks[game.id] %>
+<% picked_winner_id = pick&.picked_winner_id %>
+
+<%# Determine which teams appear in the final based on existing picks %>
+<% seven_eight_pick = picks[seven_eight_game.id]&.picked_winner_id %>
+<% nine_ten_pick    = picks[nine_ten_game.id]&.picked_winner_id %>
+
+<%# Home slot = loser of #7v8 (whichever team was NOT picked from that game) %>
+<% home_team = if seven_eight_pick
+    seven_eight_pick == seven_eight_game.home_team_id ? seven_eight_game.away_team : seven_eight_game.home_team
+  end %>
+
+<%# Away slot = winner of #9v10 %>
+<% away_team = if nine_ten_pick
+    nine_ten_pick == nine_ten_game.home_team_id ? nine_ten_game.home_team : nine_ten_game.away_team
+  end %>
+
+<div class="rounded-xl border border-gray-700 overflow-hidden"
+     id="final-game-card-<%= conference %>"
+     data-bracket-game-id="<%= game.id %>"
+     data-bracket-game-type-value="<%= game.game_type %>"
+     data-bracket-conference-value="<%= conference %>"
+     data-bracket-target="finalCard"
+     data-conference="<%= conference %>"
+     data-seven-eight-game-id="<%= seven_eight_game.id %>"
+     data-nine-ten-game-id="<%= nine_ten_game.id %>">
+
+  <!-- Home slot: loser of #7v8 -->
+  <% if home_team %>
+    <button type="button"
+            class="team-pick-btn w-full flex items-center gap-3 px-4 py-3 transition-all duration-150 text-left
+                   <%= picked_winner_id == home_team.id ? 'bg-orange-500 text-white font-bold' : 'bg-gray-800 hover:bg-gray-700 text-gray-200' %>"
+            data-action="click->bracket#pickWinner"
+            data-bracket-game-id-param="<%= game.id %>"
+            data-bracket-winner-id-param="<%= home_team.id %>"
+            data-bracket-conference-param="<%= conference %>"
+            data-bracket-game-type-param="<%= game.game_type %>"
+            data-bracket-home-away-param="home">
+      <span class="text-xs font-bold text-gray-400 w-4">#<%= home_team.seed %></span>
+      <span class="font-semibold text-sm"><%= home_team.name %></span>
+      <span class="text-xs text-gray-500 ml-1">(loser of #7v8)</span>
+      <% if picked_winner_id == home_team.id %>
+        <span class="ml-auto text-xs font-black">✓ PICK</span>
+      <% end %>
+    </button>
+  <% else %>
+    <div class="w-full flex items-center gap-3 px-4 py-3 bg-gray-800 opacity-50">
+      <span class="text-xs font-bold text-gray-500 w-4">?</span>
+      <span class="text-sm text-gray-500 italic">Loser of #7 vs #8</span>
+    </div>
+  <% end %>
+
+  <div class="h-px bg-gray-700 mx-4"></div>
+
+  <!-- Away slot: winner of #9v10 -->
+  <% if away_team %>
+    <button type="button"
+            class="team-pick-btn w-full flex items-center gap-3 px-4 py-3 transition-all duration-150 text-left
+                   <%= picked_winner_id == away_team.id ? 'bg-orange-500 text-white font-bold' : 'bg-gray-800 hover:bg-gray-700 text-gray-200' %>"
+            data-action="click->bracket#pickWinner"
+            data-bracket-game-id-param="<%= game.id %>"
+            data-bracket-winner-id-param="<%= away_team.id %>"
+            data-bracket-conference-param="<%= conference %>"
+            data-bracket-game-type-param="<%= game.game_type %>"
+            data-bracket-home-away-param="away">
+      <span class="text-xs font-bold text-gray-400 w-4">#<%= away_team.seed %></span>
+      <span class="font-semibold text-sm"><%= away_team.name %></span>
+      <span class="text-xs text-gray-500 ml-1">(winner of #9v10)</span>
+      <% if picked_winner_id == away_team.id %>
+        <span class="ml-auto text-xs font-black">✓ PICK</span>
+      <% end %>
+    </button>
+  <% else %>
+    <div class="w-full flex items-center gap-3 px-4 py-3 bg-gray-800 opacity-50">
+      <span class="text-xs font-bold text-gray-500 w-4">?</span>
+      <span class="text-sm text-gray-500 italic">Winner of #9 vs #10</span>
+    </div>
+  <% end %>
+
+</div>

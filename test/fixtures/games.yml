@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  tournament: one
+  conference: MyString
+  game_type: MyString
+  home_team: one
+  away_team: one
+
+two:
+  tournament: two
+  conference: MyString
+  game_type: MyString
+  home_team: two
+  away_team: two
