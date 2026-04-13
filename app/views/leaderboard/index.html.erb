@@ -1,0 +1,83 @@
+<% content_for :title, "Leaderboard" %>
+
+<div class="max-w-5xl mx-auto">
+  <div class="text-center mb-8">
+    <h1 class="text-3xl font-black tracking-tight text-white">Leaderboard</h1>
+    <p class="text-gray-400 text-sm mt-1"><%= @tournament.year %> NBA Play-In Tournament</p>
+  </div>
+
+  <% unless @any_locked %>
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 text-center text-gray-400">
+      The leaderboard will appear once picks lock.
+    </div>
+  <% else %>
+
+  <!-- Column headers: one per game -->
+  <%
+    col_labels = {
+      ["East", Game::SEVEN_EIGHT] => { short: "E #7v8",   note: "2 pts", color: "text-green-400" },
+      ["East", Game::NINE_TEN]    => { short: "E #9v10",  note: "2 pts", color: "text-yellow-400" },
+      ["East", Game::FINAL]       => { short: "E Final",  note: "3 pts", color: "text-blue-400" },
+      ["West", Game::SEVEN_EIGHT] => { short: "W #7v8",   note: "2 pts", color: "text-green-400" },
+      ["West", Game::NINE_TEN]    => { short: "W #9v10",  note: "2 pts", color: "text-yellow-400" },
+      ["West", Game::FINAL]       => { short: "W Final",  note: "3 pts", color: "text-blue-400" },
+    }
+  %>
+
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-800">
+          <th class="text-left px-4 py-3 text-gray-400 font-semibold w-8">#</th>
+          <th class="text-left px-4 py-3 text-gray-400 font-semibold">Player</th>
+          <% @ordered_games.each do |game| %>
+            <% meta = col_labels[[game.conference, game.game_type]] %>
+            <th class="text-center px-3 py-3 font-semibold">
+              <div class="<%= meta[:color] %>"><%= meta[:short] %></div>
+              <div class="text-gray-600 text-xs font-normal"><%= meta[:note] %></div>
+            </th>
+          <% end %>
+          <th class="text-center px-4 py-3 text-white font-bold">Pts</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @rows.each_with_index do |row, i| %>
+          <tr class="border-b border-gray-800/50 <%= row[:user] == Current.user ? 'bg-gray-800/40' : '' %>">
+            <td class="px-4 py-3 text-gray-500 text-xs"><%= i + 1 %></td>
+            <td class="px-4 py-3 font-semibold text-white">
+              <%= row[:user].display_name_or_email %>
+              <% if row[:user] == Current.user %>
+                <span class="text-xs text-orange-400 ml-1">(you)</span>
+              <% end %>
+            </td>
+            <% @ordered_games.each do |game| %>
+              <% pick = row[:picks][game.id] %>
+              <% team = pick&.picked_winner %>
+              <td class="px-3 py-3 text-center">
+                <% if team %>
+                  <%
+                    cell_class = if pick.correct?
+                      "bg-green-500/20 text-green-400 border border-green-500/40"
+                    elsif pick.incorrect?
+                      "bg-red-500/20 text-red-400 border border-red-500/40"
+                    else
+                      "bg-gray-800 text-gray-300 border border-gray-700"
+                    end
+                  %>
+                  <span class="inline-block px-2 py-0.5 rounded text-xs font-bold <%= cell_class %>">
+                    <%= team.abbreviation %>
+                  </span>
+                <% else %>
+                  <span class="text-gray-600">—</span>
+                <% end %>
+              </td>
+            <% end %>
+            <td class="px-4 py-3 text-center font-black text-lg text-white"><%= row[:score] %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <% end %>
+</div>

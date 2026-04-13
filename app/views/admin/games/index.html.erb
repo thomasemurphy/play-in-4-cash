@@ -1,0 +1,57 @@
+<% content_for :title, "Admin — Enter Results" %>
+
+<div class="max-w-2xl mx-auto">
+  <div class="text-center mb-8">
+    <h1 class="text-3xl font-black tracking-tight text-white">Admin</h1>
+    <p class="text-gray-400 text-sm mt-1">Enter play-in game results</p>
+  </div>
+
+  <%= render "admin/shared/tabs" %>
+
+  <% if flash[:notice] %>
+    <p class="mb-4 px-4 py-2 bg-green-900/50 border border-green-700 text-green-400 rounded-lg text-sm"><%= flash[:notice] %></p>
+  <% end %>
+  <% if flash[:alert] %>
+    <p class="mb-4 px-4 py-2 bg-red-900/50 border border-red-700 text-red-400 rounded-lg text-sm"><%= flash[:alert] %></p>
+  <% end %>
+
+  <div class="flex flex-col gap-4">
+    <% @ordered_games.each do |game| %>
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <span class="text-white font-bold"><%= game.display_name %></span>
+            <span class="text-xs text-gray-500 ml-2"><%= game.result_description %></span>
+          </div>
+          <% if game.winner_team %>
+            <span class="text-xs font-bold px-2 py-1 rounded bg-green-900/50 border border-green-700 text-green-400">
+              Result entered
+            </span>
+          <% else %>
+            <span class="text-xs text-gray-600">No result yet</span>
+          <% end %>
+        </div>
+
+        <%= form_with url: admin_game_path(game), method: :patch, class: "flex items-center gap-3" do |f| %>
+          <% teams = game.game_type == Game::FINAL ? @teams_by_conference[game.conference] : [game.home_team, game.away_team] %>
+          <select name="winner_team_id"
+                  class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+            <option value="">— No result yet —</option>
+            <% teams.each do |team| %>
+              <option value="<%= team.id %>" <%= game.winner_team_id == team.id ? "selected" : "" %>>
+                #<%= team.seed %> <%= team.name %>
+              </option>
+            <% end %>
+          </select>
+          <%= f.submit "Save", class: "bg-orange-500 hover:bg-orange-400 text-white font-bold px-4 py-2 rounded-lg cursor-pointer transition-colors text-sm" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="mt-6 text-center">
+    <%= link_to "← Back to bracket", root_path, class: "text-gray-500 hover:text-white text-sm" %>
+    &nbsp;&nbsp;
+    <%= link_to "View leaderboard →", leaderboard_path, class: "text-orange-400 hover:text-orange-300 text-sm font-semibold" %>
+  </div>
+</div>

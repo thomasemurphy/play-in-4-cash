@@ -27,10 +27,17 @@
     <nav class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <span class="text-2xl font-black tracking-tight text-orange-400">PLAY-IN 4 CASH</span>
+        <span class="text-xs text-gray-500 hidden sm:inline">From the MTYH family of games</span>
       </div>
       <% if authenticated? %>
-        <div class="flex items-center gap-4">
-          <span class="text-sm text-gray-400"><%= Current.user.email_address %></span>
+        <div class="flex items-center gap-5">
+          <%= link_to "Bracket", root_path, class: "text-sm text-gray-400 hover:text-white transition-colors" %>
+          <%= link_to "Leaderboard", leaderboard_path, class: "text-sm text-gray-400 hover:text-white transition-colors" %>
+          <%= link_to "Account", edit_account_path, class: "text-sm text-gray-400 hover:text-white transition-colors" %>
+          <% if Current.user.admin? %>
+            <%= link_to "Admin", admin_root_path, class: "text-sm text-orange-400 hover:text-orange-300 font-semibold" %>
+          <% end %>
+          <span class="text-sm text-gray-600"><%= Current.user.display_name_or_email %></span>
           <%= button_to "Sign out", session_path, method: :delete,
                 class: "text-sm text-gray-400 hover:text-white transition-colors cursor-pointer bg-transparent border-0" %>
         </div>
