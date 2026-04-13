@@ -68,7 +68,7 @@ end
 # Admin user
 admin = User.find_or_initialize_by(email_address: "tommurphyemail@gmail.com")
 admin.admin = true
-admin.password = admin.password_digest.present? ? "unchanged_placeholder" : SecureRandom.hex(16)
+admin.password = SecureRandom.hex(16) if admin.new_record?
 admin.save!(validate: false)
 
 if Rails.env.development?
