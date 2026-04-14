@@ -3,4 +3,6 @@
         class: "px-5 py-2 rounded-lg text-sm font-semibold transition-colors #{current_page?(admin_root_path) ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'}" %>
   <%= link_to "Picks", admin_picks_path,
         class: "px-5 py-2 rounded-lg text-sm font-semibold transition-colors #{current_page?(admin_picks_path) ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'}" %>
+  <%= link_to "Users", admin_users_path,
+        class: "px-5 py-2 rounded-lg text-sm font-semibold transition-colors #{current_page?(admin_users_path) ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'}" %>
 </div>
