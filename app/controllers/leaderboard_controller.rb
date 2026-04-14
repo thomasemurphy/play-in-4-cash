@@ -26,7 +26,9 @@ class LeaderboardController < ApplicationController
 
     picks_by_user = all_picks.group_by(&:user_id)
 
-    east_nine_ten = @ordered_games.find { |g| g.conference == "East" && g.game_type == Game::NINE_TEN }
+    e9v10  = @ordered_games.find { |g| g.conference == "East" && g.game_type == Game::NINE_TEN }
+    e7v8   = @ordered_games.find { |g| g.conference == "East" && g.game_type == Game::SEVEN_EIGHT }
+    efinal = @ordered_games.find { |g| g.conference == "East" && g.game_type == Game::FINAL }
 
     @rows = User.where(id: picks_by_user.keys)
       .order(:email_address)
@@ -37,8 +39,11 @@ class LeaderboardController < ApplicationController
         { user: user, picks: picks_by_game, score: score }
       end
       .sort_by do |r|
-        e9v10_abbr = east_nine_ten && r[:picks][east_nine_ten.id]&.picked_winner&.abbreviation || "ZZZ"
-        e9v10_abbr
+        [
+          r[:picks][e9v10&.id]&.picked_winner&.abbreviation  || "ZZZ",
+          r[:picks][e7v8&.id]&.picked_winner&.abbreviation   || "ZZZ",
+          r[:picks][efinal&.id]&.picked_winner&.abbreviation || "ZZZ",
+        ]
       end
   end
 end
