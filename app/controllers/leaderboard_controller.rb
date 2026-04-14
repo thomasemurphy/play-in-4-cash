@@ -26,6 +26,8 @@ class LeaderboardController < ApplicationController
 
     picks_by_user = all_picks.group_by(&:user_id)
 
+    east_nine_ten = @ordered_games.find { |g| g.conference == "East" && g.game_type == Game::NINE_TEN }
+
     @rows = User.where(id: picks_by_user.keys)
       .order(:email_address)
       .map do |user|
@@ -34,6 +36,9 @@ class LeaderboardController < ApplicationController
         score = user_picks.sum(&:points)
         { user: user, picks: picks_by_game, score: score }
       end
-      .sort_by { |r| -r[:score] }
+      .sort_by do |r|
+        e9v10_abbr = east_nine_ten && r[:picks][east_nine_ten.id]&.picked_winner&.abbreviation || "ZZZ"
+        e9v10_abbr
+      end
   end
 end
