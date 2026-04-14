@@ -10,14 +10,18 @@ class LeaderboardController < ApplicationController
       .order(:conference, :game_type)
       .to_a
 
-    # Ordered for display: East 7v8, East 9v10, East Final, West 7v8, West 9v10, West Final
-    @ordered_games = %w[East West].flat_map do |conf|
+    locked_conferences = %w[East West].select { |c| @tournament.locked_for?(c) }
+    @any_locked = locked_conferences.any?
+
+    # Only show columns for locked conferences
+    @ordered_games = locked_conferences.flat_map do |conf|
       [Game::SEVEN_EIGHT, Game::NINE_TEN, Game::FINAL].map do |type|
         @games.find { |g| g.conference == conf && g.game_type == type }
       end
     end
 
-    all_picks = UserPick.where(game_id: @games.map(&:id))
+    visible_game_ids = @ordered_games.map(&:id)
+    all_picks = UserPick.where(game_id: visible_game_ids)
       .includes(:picked_winner, :game)
 
     picks_by_user = all_picks.group_by(&:user_id)
@@ -31,7 +35,5 @@ class LeaderboardController < ApplicationController
         { user: user, picks: picks_by_game, score: score }
       end
       .sort_by { |r| -r[:score] }
-
-    @any_locked = @tournament.locked_for?("East") || @tournament.locked_for?("West")
   end
 end
