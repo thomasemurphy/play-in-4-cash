@@ -46,7 +46,12 @@
           <tr class="border-b border-gray-800/50 <%= row[:user] == Current.user ? 'bg-gray-800/40' : '' %>">
             <td class="px-4 py-3 text-gray-500 text-xs"><%= i + 1 %></td>
             <td class="px-4 py-3 font-semibold text-white">
-              <span title="<%= row[:user].email_address %>"><%= row[:user].display_name_or_email %></span>
+              <span class="relative group cursor-default">
+                <%= row[:user].display_name_or_email %>
+                <span class="absolute bottom-full left-0 mb-1 px-2 py-1 rounded bg-gray-700 text-gray-200 text-xs font-normal whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none">
+                  <%= row[:user].email_address %>
+                </span>
+              </span>
               <% if row[:user] == Current.user %>
                 <span class="text-xs text-orange-400 ml-1">(you)</span>
               <% end %>
