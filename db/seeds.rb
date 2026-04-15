@@ -17,7 +17,7 @@ tournament.save!
 
 # East Conference play-in teams (seeds 7-10)
 east_teams = [
-  { name: "Philadelphia 76ers", abbreviation: "PHI", conference: "East", seed: 7,  primary_color: "#006BB6", secondary_color: "#ED174C" },
+  { name: "Philadelphia 76ers", abbreviation: "PHI", conference: "East", seed: 7,  primary_color: "#ED174C", secondary_color: "#006BB6" },
   { name: "Orlando Magic",      abbreviation: "ORL", conference: "East", seed: 8,  primary_color: "#0077C0", secondary_color: "#000000" },
   { name: "Charlotte Hornets",  abbreviation: "CHA", conference: "East", seed: 9,  primary_color: "#00788C", secondary_color: "#1D1160" },
   { name: "Miami Heat",         abbreviation: "MIA", conference: "East", seed: 10, primary_color: "#98002E", secondary_color: "#F9A01B" },
