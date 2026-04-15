@@ -76,6 +76,7 @@ class LeaderboardController < ApplicationController
       end
       .sort_by do |r|
         [
+          -r[:max_score],
           -r[:score],
           r[:picks][e9v10&.id]&.picked_winner&.abbreviation  || "ZZZ",
           r[:picks][e7v8&.id]&.picked_winner&.abbreviation   || "ZZZ",
