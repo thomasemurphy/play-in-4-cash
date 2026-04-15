@@ -55,19 +55,15 @@
               <% team = pick&.picked_winner %>
               <td class="px-3 py-3 text-center">
                 <% if team %>
-                  <%
-                    border_style = if pick.correct?
-                      "border: 1.5px solid #22c55e;"
-                    elsif pick.incorrect?
-                      "border: 1.5px solid #ef4444;"
-                    else
-                      "border: 1.5px solid #{team.primary_color}40;"
-                    end
-                  %>
                   <span class="inline-block px-2 py-0.5 rounded text-xs font-bold"
-                        style="background-color: <%= team.primary_color %>; color: <%= team.secondary_color %>; <%= border_style %>">
+                        style="background-color: <%= team.primary_color %>; color: <%= team.secondary_color %>; border: 1.5px solid <%= team.primary_color %>40;">
                     <%= team.abbreviation %>
                   </span>
+                  <% if pick.correct? %>
+                    <span class="text-xs">✅</span>
+                  <% elsif pick.incorrect? %>
+                    <span class="text-xs">❌</span>
+                  <% end %>
                 <% else %>
                   <span class="text-gray-600">—</span>
                 <% end %>
