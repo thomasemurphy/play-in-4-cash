@@ -25,26 +25,32 @@
   %>
 
   <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-    <table class="w-full text-sm">
+    <table id="leaderboard-table" class="w-full text-sm">
       <thead>
         <tr class="border-b border-gray-800">
           <th class="text-left px-4 py-3 text-gray-400 font-semibold w-8">#</th>
-          <th class="text-left px-4 py-3 text-gray-400 font-semibold">Player</th>
+          <th data-sort="player" class="text-left px-4 py-3 text-gray-400 font-semibold cursor-pointer hover:text-white select-none">Player <span class="sort-indicator"></span></th>
           <% @ordered_games.each do |game| %>
             <% meta = col_labels[[game.conference, game.game_type]] %>
-            <th class="text-center px-3 py-3 font-semibold">
-              <div class="<%= meta[:color] %>"><%= meta[:short] %></div>
+            <th data-sort="game-<%= game.id %>" class="text-center px-3 py-3 font-semibold cursor-pointer hover:brightness-125 select-none">
+              <div class="<%= meta[:color] %>"><%= meta[:short] %> <span class="sort-indicator"></span></div>
               <div class="text-gray-600 text-xs font-normal"><%= meta[:note] %></div>
             </th>
           <% end %>
-          <th class="text-center px-4 py-3 text-white font-bold">Pts</th>
-          <th class="text-center px-4 py-3 text-gray-400 font-bold">Max</th>
+          <th data-sort="score" class="text-center px-4 py-3 text-white font-bold cursor-pointer hover:text-orange-400 select-none">Pts <span class="sort-indicator"></span></th>
+          <th data-sort="max-score" class="text-center px-4 py-3 text-gray-400 font-bold cursor-pointer hover:text-white select-none">Max <span class="sort-indicator"></span></th>
         </tr>
       </thead>
       <tbody>
         <% @rows.each_with_index do |row, i| %>
-          <tr class="border-b border-gray-800/50 <%= row[:user] == Current.user ? 'bg-gray-800/40' : '' %>">
-            <td class="px-4 py-3 text-gray-500 text-xs"><%= i + 1 %></td>
+          <tr class="border-b border-gray-800/50 <%= row[:user] == Current.user ? 'bg-gray-800/40' : '' %>"
+              data-player="<%= row[:user].display_name_or_email %>"
+              data-score="<%= row[:score] %>"
+              data-max-score="<%= row[:max_score] %>"
+              <% @ordered_games.each do |game| %>
+                data-game-<%= game.id %>="<%= row[:picks][game.id]&.picked_winner&.abbreviation || '' %>"
+              <% end %>>
+            <td class="rank-cell px-4 py-3 text-gray-500 text-xs"><%= i + 1 %></td>
             <td class="px-4 py-3 font-semibold text-white">
               <span class="relative group cursor-default">
                 <%= row[:user].display_name_or_email %>
@@ -86,3 +92,49 @@
 
   <% end %>
 </div>
+
+<script>
+  const table = document.getElementById("leaderboard-table");
+  if (table) {
+    let currentSort = { key: "max-score", dir: "desc" };
+
+    function getVal(row, key) {
+      const raw = row.dataset[key.replace(/-([a-z])/g, (_, c) => c.toUpperCase())] ?? row.dataset[key] ?? "";
+      const num = parseFloat(raw);
+      return isNaN(num) ? raw.toLowerCase() : num;
+    }
+
+    function sortTable(key, dir) {
+      const tbody = table.querySelector("tbody");
+      const rows = Array.from(tbody.querySelectorAll("tr"));
+      rows.sort((a, b) => {
+        const av = getVal(a, key), bv = getVal(b, key);
+        if (av === bv) return 0;
+        const cmp = av > bv ? 1 : -1;
+        return dir === "asc" ? cmp : -cmp;
+      });
+      rows.forEach(r => tbody.appendChild(r));
+      // Update rank numbers
+      rows.forEach((r, i) => {
+        const cell = r.querySelector(".rank-cell");
+        if (cell) cell.textContent = i + 1;
+      });
+      // Update indicators
+      table.querySelectorAll("th .sort-indicator").forEach(el => el.textContent = "");
+      const activeHeader = table.querySelector(`th[data-sort="${key}"] .sort-indicator`);
+      if (activeHeader) activeHeader.textContent = dir === "asc" ? " ↑" : " ↓";
+    }
+
+    table.querySelectorAll("th[data-sort]").forEach(th => {
+      th.addEventListener("click", () => {
+        const key = th.dataset.sort;
+        const dir = currentSort.key === key && currentSort.dir === "desc" ? "asc" : "desc";
+        currentSort = { key, dir };
+        sortTable(key, dir);
+      });
+    });
+
+    // Apply default sort indicator
+    sortTable("max-score", "desc");
+  }
+</script>
