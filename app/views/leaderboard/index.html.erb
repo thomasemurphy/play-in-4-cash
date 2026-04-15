@@ -38,6 +38,7 @@
             </th>
           <% end %>
           <th class="text-center px-4 py-3 text-white font-bold">Pts</th>
+          <th class="text-center px-4 py-3 text-gray-400 font-bold">Max</th>
         </tr>
       </thead>
       <tbody>
@@ -55,13 +56,14 @@
               <% team = pick&.picked_winner %>
               <td class="px-3 py-3 text-center">
                 <% if team %>
+                  <% impossible = row[:impossible_game_ids].include?(game.id) %>
                   <span class="inline-block px-2 py-0.5 rounded text-xs font-bold"
                         style="background-color: <%= team.primary_color %>; color: <%= team.secondary_color %>; border: 1.5px solid <%= team.primary_color %>40;">
                     <%= team.abbreviation %>
                   </span>
                   <% if pick.correct? %>
                     <span class="text-xs">✅</span>
-                  <% elsif pick.incorrect? %>
+                  <% elsif pick.incorrect? || impossible %>
                     <span class="text-xs">❌</span>
                   <% end %>
                 <% else %>
@@ -70,6 +72,7 @@
               </td>
             <% end %>
             <td class="px-4 py-3 text-center font-black text-lg text-white"><%= row[:score] %></td>
+            <td class="px-4 py-3 text-center font-bold text-lg text-gray-400"><%= row[:max_score] %></td>
           </tr>
         <% end %>
       </tbody>
