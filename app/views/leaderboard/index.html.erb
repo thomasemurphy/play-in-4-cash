@@ -46,7 +46,7 @@
           <tr class="border-b border-gray-800/50 <%= row[:user] == Current.user ? 'bg-gray-800/40' : '' %>">
             <td class="px-4 py-3 text-gray-500 text-xs"><%= i + 1 %></td>
             <td class="px-4 py-3 font-semibold text-white">
-              <%= row[:user].display_name_or_email %>
+              <span title="<%= row[:user].email_address %>"><%= row[:user].display_name_or_email %></span>
               <% if row[:user] == Current.user %>
                 <span class="text-xs text-orange-400 ml-1">(you)</span>
               <% end %>
