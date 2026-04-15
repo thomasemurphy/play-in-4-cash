@@ -31,7 +31,7 @@
       </div>
       <% if authenticated? %>
         <div class="flex items-center gap-5">
-          <%= link_to "My Picks", root_path, class: "text-sm text-gray-400 hover:text-white transition-colors" %>
+          <%= link_to "My Picks", picks_path, class: "text-sm text-gray-400 hover:text-white transition-colors" %>
           <%= link_to "Leaderboard", leaderboard_path, class: "text-sm text-gray-400 hover:text-white transition-colors" %>
           <%= link_to "Account", edit_account_path, class: "text-sm text-gray-400 hover:text-white transition-colors" %>
           <% if Current.user.admin? %>

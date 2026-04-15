@@ -3,10 +3,6 @@ class PicksController < ApplicationController
   before_action :set_tournament
 
   def index
-    if @tournament.locked_for?("East")
-      return redirect_to leaderboard_path
-    end
-
     @games = @tournament.games.includes(:home_team, :away_team).to_a
 
     @picks = Current.user.user_picks
